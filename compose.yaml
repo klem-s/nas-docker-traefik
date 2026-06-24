@@ -1,0 +1,32 @@
+services:
+
+  # ─────────────────────────────────────────
+  #  TRAEFIK – Reverse proxy HTTPS
+  # ─────────────────────────────────────────
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    command:
+      - --api.insecure=false
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=proxy
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${CONFIG}/traefik/letsencrypt:/letsencrypt
+    networks:
+      - proxy
+    restart: unless-stopped
+networks:
+  proxy:
+    external: true
